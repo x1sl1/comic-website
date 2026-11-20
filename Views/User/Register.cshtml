@@ -1,0 +1,35 @@
+@{
+    ViewBag.Title = "Đăng ký";
+}
+<section class="auth-page">
+    <h1>Đăng ký tài khoản</h1>
+
+    @using (Html.BeginForm("Register", "User", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+
+        <label for="username">Tên người dùng</label>
+        <input id="username" name="username" type="text" autocomplete="username" />
+
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email" />
+
+        <label for="password">Mật khẩu</label>
+        <input id="password" name="password" type="password" autocomplete="new-password" />
+
+        <label for="confirmPassword">Nhập lại mật khẩu</label>
+        <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" />
+
+        if (ViewBag.Error != null)
+        {
+            <p class="auth-error">@ViewBag.Error</p>
+        }
+
+        <button type="submit">Đăng ký</button>
+    }
+
+    <p class="auth-switch">
+        Đã có tài khoản?
+        @Html.ActionLink("Đăng nhập", "Login", "User")
+    </p>
+</section>

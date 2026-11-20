@@ -1,0 +1,23 @@
+@{
+    ViewBag.Title = "Đăng nhập";
+}
+<section class="auth-page">
+    <h1>Đăng nhập</h1>
+    @using (Html.BeginForm("Login", "User", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        <label>Email</label>
+        <input type="email" name="email" />
+        <label>Mật khẩu</label>
+        <input type="password" name="password" />
+        if (TempData["Success"] != null)
+        {
+            <p class="auth-success">@TempData["Success"]</p>
+        }
+        if (ViewBag.Error != null)
+        {
+            <p class="auth-error">@ViewBag.Error</p>
+        }
+        <button type="submit">Đăng nhập</button>
+    }
+</section>

@@ -1,0 +1,95 @@
+@model IEnumerable<comic_website.Models.Story>
+@{
+    ViewBag.Title = "Tất cả truyện";
+}
+
+<section class="comic-section story-list-section">
+    <div class="story-list-header">
+        <div class="section-heading">
+            <span class="heading-icon">★</span>
+            <h1>Tất cả truyện</h1>
+        </div>
+
+        @using (Html.BeginForm("Index", "Story", FormMethod.Get, new { @class = "story-filter", id = "storyFilter" }))
+        {
+            <label for="categoryFilter">Thể loại</label>
+            <select id="categoryFilter" name="category">
+                <option value="">Tất cả thể loại</option>
+                @if (ViewBag.Categories != null)
+                {
+                    foreach (var category in (IEnumerable<string>)ViewBag.Categories)
+                    {
+                        <option value="@category">@category</option>
+                    }
+                }
+            </select>
+
+            <label for="rankingFilter">Xếp hạng</label>
+            <select id="rankingFilter" name="ranking">
+                <option value="">Tất cả xếp hạng</option>
+                @foreach (var ranking in new[] { "Top Ngày", "Top Tuần", "Top Tháng", "Top Năm", "Yêu thích" })
+                {
+                    <option value="@ranking">@ranking</option>
+                }
+            </select>
+
+            <label for="nameSortFilter">Tên truyện</label>
+            <select id="nameSortFilter" name="nameSort">
+                <option value="">Không sắp xếp</option>
+                <option value="A-Z">A-Z</option>
+                <option value="Z-A">Z-A</option>
+            </select>
+
+            <button type="submit">Lọc truyện</button>
+        }
+    </div>
+
+    <div class="comic-grid">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var story in Model)
+            {
+                <article class="comic-card">
+                    <a href="@Url.Action("Details", "Story", new { id = story.StoryId })">
+                        <div class="comic-cover">
+                            <span class="cover-letter">@(!String.IsNullOrWhiteSpace(story.Title) ? story.Title.Substring(0, 1) : "T")</span>
+                            <span class="fresh-badge">Mới cập nhật</span>
+                        </div>
+                        <h2>@story.Title</h2>
+                        <p>@(story.Chapters != null ? story.Chapters.Count : 0) chương</p>
+                    </a>
+                </article>
+            }
+        }
+        else
+        {
+            <p class="empty-story-list">Không tìm thấy truyện phù hợp.</p>
+        }
+    </div>
+</section>
+
+@section scripts {
+    <script>
+        (function () {
+            var category = '@(ViewBag.SelectedCategory ?? "")';
+            var ranking = '@(ViewBag.SelectedRanking ?? "")';
+            var categoryFilter = document.getElementById('categoryFilter');
+            var rankingFilter = document.getElementById('rankingFilter');
+            var nameSortFilter = document.getElementById('nameSortFilter');
+            var nameSort = '@(ViewBag.SelectedNameSort ?? "")';
+
+            if (categoryFilter) categoryFilter.value = category;
+            if (rankingFilter) rankingFilter.value = ranking;
+            if (nameSortFilter) nameSortFilter.value = nameSort;
+
+            var filterForm = document.getElementById('storyFilter');
+            if (filterForm) {
+                filterForm.querySelectorAll('select').forEach(function (select) {
+                    select.addEventListener('change', function () {
+                        filterForm.submit();
+                    });
+                });
+            }
+        }());
+    </script>
+}

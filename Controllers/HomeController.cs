@@ -1,16 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+﻿using System.Linq;
 using System.Web.Mvc;
+using comic_website.Models;
 
 namespace comic_website.Controllers
 {
     public class HomeController : Controller
     {
+        private readonly WebDocTruyenEntities db = new WebDocTruyenEntities();
+
         public ActionResult Index()
         {
-            return View();
+            var stories = db.Stories
+                .Include("Chapters")
+                .OrderByDescending(s => s.CreatedAt)
+                .Take(21)
+                .ToList();
+
+            return View(stories);
         }
 
         public ActionResult About()
@@ -25,6 +31,16 @@ namespace comic_website.Controllers
             ViewBag.Message = "Your contact page.";
 
             return View();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+
+            base.Dispose(disposing);
         }
     }
 }
