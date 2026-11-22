@@ -1,0 +1,145 @@
+@model IEnumerable<comic_website.Models.Story>
+@{
+    ViewBag.Title = "Quản lý truyện";
+}
+@section head {
+    <style>
+        /* Khung chứa nhóm nút trong cột Thao tác */
+        .admin-table td:last-child,
+        .admin-actions {
+            white-space: nowrap;
+        }
+
+        .admin-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        /* Nút thao tác nhỏ gọn trong bảng / danh sách chương */
+        .admin-action-btn,
+        .admin-table td a,
+        .admin-table td button[type="submit"] {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: #fff;
+            color: #374151;
+            font-size: 12.5px;
+            font-weight: 600;
+            line-height: 1.2;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+        }
+
+        .admin-action-btn:hover,
+        .admin-table td a:hover {
+            border-color: #9ca3af;
+            background: #f3f4f6;
+            color: #111827;
+        }
+
+        /* Nút Thêm chương / hành động cam nổi bật */
+        .admin-btn-chapter,
+        .admin-action-chapter {
+            border-color: #fdba74;
+            background: #fff7ed;
+            color: #c86419;
+        }
+
+        .admin-btn-chapter:hover,
+        .admin-action-chapter:hover {
+            border-color: #d97724;
+            background: #d97724;
+            color: #fff;
+        }
+
+        /* Nút Sửa */
+        .admin-action-edit {
+            border-color: #d1d5db;
+            background: #fff;
+            color: #1f2937;
+        }
+
+        .admin-action-edit:hover {
+            border-color: #9ca3af;
+            background: #f9fafb;
+        }
+
+        /* Nút Xóa (submit button / link xóa) */
+        .admin-action-delete,
+        .admin-table td button[type="submit"] {
+            border-color: #fecaca;
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .admin-action-delete:hover,
+        .admin-table td button[type="submit"]:hover {
+            border-color: #dc2626;
+            background: #dc2626;
+            color: #fff;
+        }
+
+        /* Nếu nút Xóa nằm trong form inline trên bảng */
+        .admin-table td form {
+            display: inline-flex;
+            margin: 0;
+        }
+    </style>
+}
+<section class="admin-page">
+    @Html.Partial("_AdminNav")
+    <div class="admin-header">
+        <div>
+            <p class="admin-eyebrow">Nội dung</p>
+            <h1>Quản lý truyện</h1>
+        </div>
+        @Html.ActionLink("+ Thêm truyện", "CreateStory", "Admin", null, new { @class = "admin-primary-button" })
+    </div>
+
+    @if (TempData["Success"] != null)
+    {<p class="admin-alert success">@TempData["Success"]</p>}
+    @if (TempData["Error"] != null)
+    {<p class="admin-alert error">@TempData["Error"]</p>}
+
+    <div class="admin-panel">
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead><tr><th>Tên truyện</th><th>Thể loại</th><th>Chương</th><th>Tác giả</th><th>Thao tác</th></tr></thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var story in Model)
+                        {
+                        <tr>
+                            <td><strong>@story.Title</strong></td>
+                            <td>@(story.Category == null ? "" : story.Category.CategoryName)</td>
+                            <td>@(story.Chapters == null ? 0 : story.Chapters.Count)</td>
+                            <td>@story.Author</td>
+                            <td class="admin-actions">
+                                @Html.ActionLink("Thêm chương", "Chapters", "Admin", new { storyId = story.StoryId }, new { @class = "admin-link" })
+                                @Html.ActionLink("Sửa", "EditStory", "Admin", new { id = story.StoryId }, new { @class = "admin-link" })
+                                @using (Html.BeginForm("DeleteStory", "Admin", new { id = story.StoryId }, FormMethod.Post, new { @class = "inline-form" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <button class="admin-link danger" type="submit" onclick="return confirm('Xóa truyện này và toàn bộ chương?');">Xóa</button>
+                                }
+                            </td>
+                        </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="5"><div class="admin-empty">Chưa có truyện nào.</div></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

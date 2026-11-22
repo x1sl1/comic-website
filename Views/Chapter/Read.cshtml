@@ -1,0 +1,76 @@
+@model comic_website.Models.Chapter
+@{
+    var pageTitle = String.IsNullOrWhiteSpace(Model.Title) ? "Chương " + Model.ChapterNumber : Model.Title;
+    var hasChapterImage = !String.IsNullOrWhiteSpace(Model.Content)
+        && Model.Content.StartsWith("/Uploads/Chapters/", StringComparison.OrdinalIgnoreCase);
+    ViewBag.Title = pageTitle;
+}
+@section head {
+    <style>
+        .chapter-reader {
+            width: calc(100% - 32px);
+            max-width: 1000px;
+            margin: 32px auto 48px;
+            padding: 24px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, .05);
+        }
+
+        .chapter-reader-header {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .chapter-reader-header p {
+            margin: 0 0 6px;
+            color: #d97724;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .chapter-reader-header h1 {
+            margin: 0;
+            color: #111827;
+            font-size: 24px;
+        }
+
+        .chapter-reader-image {
+            display: block;
+            width: 100%;
+            height: auto;
+            margin: 0 auto;
+        }
+
+        .chapter-reader-text {
+            white-space: pre-wrap;
+            line-height: 1.8;
+        }
+
+        @@media (max-width: 600px) {
+            .chapter-reader { width: calc(100% - 20px); margin: 18px auto 30px; padding: 16px; }
+            .chapter-reader-header h1 { font-size: 20px; }
+        }
+    </style>
+}
+<section class="chapter-reader">
+    <header class="chapter-reader-header">
+        <p>Chương @Model.ChapterNumber</p>
+        <h1>@pageTitle</h1>
+    </header>
+
+    @if (hasChapterImage)
+    {
+        <img class="chapter-reader-image" src="@Url.Content(Model.Content)" alt="Trang ảnh chương @Model.ChapterNumber" />
+    }
+    else if (!String.IsNullOrWhiteSpace(Model.Content))
+    {
+        <div class="chapter-reader-text">@Model.Content</div>
+    }
+    else
+    {
+        <p>Chương này chưa có nội dung.</p>
+    }
+</section>

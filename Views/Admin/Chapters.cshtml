@@ -1,0 +1,233 @@
+@model IEnumerable<comic_website.Models.Chapter>
+@{
+    var story = (comic_website.Models.Story)ViewBag.Story;
+    ViewBag.Title = "Chương - " + story.Title;
+}
+@section head {
+    <style>
+        /* Card khối Thêm chương mới & Danh sách chương */
+        .admin-page .admin-panel,
+        .admin-page .admin-card,
+        .admin-page .chapter-form-card,
+        .admin-page .chapter-list-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        }
+
+        .admin-page h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 16px;
+            color: #111827;
+        }
+
+        /* Grid các ô nhập liệu trong form Thêm chương mới */
+        .admin-page .chapter-form-grid,
+        .admin-page form .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px 18px;
+            align-items: start;
+        }
+
+        .admin-page form label {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            min-width: 0;
+        }
+
+        /* Style đồng nhất cho mọi input, select, textarea trong trang chương */
+        .admin-page input[type="text"],
+        .admin-page input[type="number"],
+        .admin-page input[type="file"],
+        .admin-page select,
+        .admin-page textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 9px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            color: #111827;
+            background: #ffffff;
+        }
+
+        .admin-page input[type="text"]:focus,
+        .admin-page input[type="number"]:focus,
+        .admin-page select:focus,
+        .admin-page textarea:focus {
+            outline: none;
+            border-color: #d97724;
+            box-shadow: 0 0 0 3px rgba(217, 119, 36, 0.15);
+        }
+
+        .admin-page textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .admin-page .chapter-image-preview {
+            display: block;
+            max-width: 100%;
+            max-height: 360px;
+            margin-top: 8px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            object-fit: contain;
+        }
+
+        /* Nếu textarea hoặc ô Nội dung cần chiếm trọn hàng ngang */
+        .admin-page .full,
+        .admin-page .field-full,
+        .admin-page label:has(textarea) {
+            grid-column: 1 / -1;
+        }
+
+        /* Nút submit của form chương */
+        .admin-page form button[type="submit"],
+        .admin-page .btn-upload-chapter {
+            margin-top: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 9px 16px;
+            border-radius: 8px;
+            border: 1px solid #d97724;
+            background: #d97724;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+
+        .admin-page form button[type="submit"]:hover,
+        .admin-page .btn-upload-chapter:hover {
+            background: #b45309;
+            border-color: #b45309;
+        }
+
+        /* Danh sách chương dạng <details>/<summary> hoặc bảng */
+        .admin-page details {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            background: #f9fafb;
+        }
+
+        .admin-page summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .admin-page table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .admin-page th,
+        .admin-page td {
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .admin-page th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .admin-page tbody tr:hover {
+            background: #fffaf5;
+        }
+
+        @@media (max-width: 768px) {
+            .admin-page .chapter-form-grid,
+            .admin-page form .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+<section class="admin-page">
+    @Html.Partial("_AdminNav")
+    <div class="admin-header">
+        <div><p class="admin-eyebrow">Chương truyện</p><h1>@story.Title</h1></div>
+        @Html.ActionLink("← Quay lại truyện", "EditStory", "Admin", new { id = story.StoryId }, new { @class = "admin-secondary-button" })
+    </div>
+
+    @if (TempData["Success"] != null)
+    {<p class="admin-alert success">@TempData["Success"]</p>}
+    @if (TempData["Error"] != null)
+    {<p class="admin-alert error">@TempData["Error"]</p>}
+
+    <div class="admin-panel chapter-upload-panel">
+        <h2>Thêm chương mới</h2>
+        @using (Html.BeginForm("CreateChapter", "Admin", FormMethod.Post, new { @class = "chapter-form", enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.Hidden("storyId", story.StoryId)
+            <div class="chapter-form-grid">
+                <label>Số chương<input type="number" name="chapterNumber" min="1" required /></label>
+                <label>Tiêu đề chương<input type="text" name="title" /></label>
+                <label class="full">Ảnh chương<input type="file" name="chapterImage" accept="image/jpeg,image/png,image/webp" required /></label>
+            </div>
+            <div class="admin-form-actions"><button class="admin-primary-button" type="submit">Tải lên chương</button></div>
+        }
+    </div>
+
+    <div class="admin-panel">
+        <div class="admin-panel-heading"><h2>Danh sách chương</h2></div>
+        <div class="chapter-list">
+            @foreach (var chapter in Model)
+            {
+                <details class="chapter-editor">
+                    <summary><strong>Chương @chapter.ChapterNumber</strong><span>@chapter.Title</span></summary>
+                    @using (Html.BeginForm("EditChapter", "Admin", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.Hidden("chapterId", chapter.ChapterId)
+                        <div class="chapter-form-grid">
+                            <label>Số chương<input type="number" name="chapterNumber" value="@chapter.ChapterNumber" min="1" required /></label>
+                            <label>Tiêu đề<input type="text" name="title" value="@chapter.Title" /></label>
+                            @if (!String.IsNullOrWhiteSpace(chapter.Content) && chapter.Content.StartsWith("/Uploads/Chapters/", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <div class="full">
+                                    <span>Ảnh hiện tại</span>
+                                    <img class="chapter-image-preview" src="@Url.Content(chapter.Content)" alt="Ảnh chương @chapter.ChapterNumber" />
+                                </div>
+                            }
+                            <label class="full">@(String.IsNullOrWhiteSpace(chapter.Content) || !chapter.Content.StartsWith("/Uploads/Chapters/", StringComparison.OrdinalIgnoreCase) ? "Ảnh chương" : "Thay ảnh chương")<input type="file" name="chapterImage" accept="image/jpeg,image/png,image/webp" /></label>
+                        </div>
+                        <div class="admin-form-actions">
+                            <button class="admin-primary-button small" type="submit">Cập nhật</button>
+                        </div>
+                    }
+                    @using (Html.BeginForm("DeleteChapter", "Admin", FormMethod.Post, new { @class = "inline-form delete-chapter" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.Hidden("chapterId", chapter.ChapterId)
+                        <button class="admin-link danger" type="submit" onclick="return confirm('Xóa chương này?');">Xóa chương</button>
+                    }
+                </details>
+            }
+        </div>
+    </div>
+</section>

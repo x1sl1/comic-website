@@ -78,15 +78,22 @@
             var nameSortFilter = document.getElementById('nameSortFilter');
             var nameSort = '@(ViewBag.SelectedNameSort ?? "")';
 
-            if (categoryFilter) categoryFilter.value = category;
-            if (rankingFilter) rankingFilter.value = ranking;
-            if (nameSortFilter) nameSortFilter.value = nameSort;
+            if (categoryFilter) {
+                categoryFilter.querySelectorAll('option').forEach(function (option) { option.selected = option.value === category; });
+            }
+            if (rankingFilter) {
+                rankingFilter.querySelectorAll('option').forEach(function (option) { option.selected = option.value === ranking; });
+            }
+            if (nameSortFilter) {
+                nameSortFilter.querySelectorAll('option').forEach(function (option) { option.selected = option.value === nameSort; });
+            }
 
             var filterForm = document.getElementById('storyFilter');
             if (filterForm) {
+                var submitButtons = filterForm.getElementsByTagName('button');
                 filterForm.querySelectorAll('select').forEach(function (select) {
                     select.addEventListener('change', function () {
-                        filterForm.submit();
+                        if (submitButtons.length > 0) submitButtons[0].click();
                     });
                 });
             }

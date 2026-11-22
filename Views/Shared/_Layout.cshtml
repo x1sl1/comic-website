@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewBag.Title - Comic Website</title>
     @Styles.Render("~/Content/css")
-    <link href="~/Content/Site.css" rel="stylesheet" />
+    @RenderSection("head", required: false)
 </head>
 <body>
     <header class="site-header">
@@ -24,8 +24,23 @@
             }
 
             <div class="auth-actions">
-                <a class="button button-register" href="@Url.Action("Register", "User")">Đăng ký</a>
-                <a class="button button-login" href="@Url.Action("Login", "User")">Đăng nhập</a>
+                @if (Session["IsAdmin"] is bool && (bool)Session["IsAdmin"])
+                {
+                    <a class="button button-register" href="@Url.Action("Index", "Admin")">Quản trị</a>
+                }
+                @if (Session["UserId"] != null)
+                {
+                    using (Html.BeginForm("Logout", "User", FormMethod.Post, new { @class = "header-logout-form" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button class="button button-login" type="submit">Đăng xuất</button>
+                    }
+                }
+                else
+                {
+                    <a class="button button-register" href="@Url.Action("Register", "User")">Đăng ký</a>
+                    <a class="button button-login" href="@Url.Action("Login", "User")">Đăng nhập</a>
+                }
             </div>
         </div>
 

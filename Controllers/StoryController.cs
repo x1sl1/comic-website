@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data.Entity;
+using System.IO;
 using System.Linq;
 using System.Web.Mvc;
 using comic_website.Models;
@@ -76,8 +77,9 @@ namespace comic_website.Controllers
         public ActionResult Details(int id)
         {
             var story = db.Stories
+                          .Include("Category")
                           .Include(s => s.Chapters)
-                          .Include(s => s.Comments)
+                          .Include("Comments.User")
                           .FirstOrDefault(s => s.StoryId == id);
 
             if (story == null)
@@ -85,6 +87,7 @@ namespace comic_website.Controllers
                 return HttpNotFound();
             }
 
+            ViewBag.CoverUrl = GetStoryCoverUrl(story.StoryId);
             return View(story);
         }
 
@@ -204,6 +207,17 @@ namespace comic_website.Controllers
             db.SaveChanges();
 
             return RedirectToAction("Index");
+        }
+
+        private string GetStoryCoverUrl(int storyId)
+        {
+            var mapPath = Server.MapPath("~/App_Data/story-covers.txt");
+            if (!File.Exists(mapPath)) return null;
+
+            var prefix = storyId + "|";
+            var line = File.ReadLines(mapPath)
+                .FirstOrDefault(entry => entry.StartsWith(prefix, StringComparison.Ordinal));
+            return line == null ? null : line.Substring(prefix.Length);
         }
 
         protected override void Dispose(bool disposing)

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Configuration;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web.Mvc;
@@ -79,7 +80,7 @@ public class UserController : Controller
         }
 
         email = email.Trim();
-        var user = db.Users.FirstOrDefault(u => u.Email == email);
+        var user = db.Users.FirstOrDefault(u => u.Email == email || u.Username == email);
 
         if (user == null || !VerifyPassword(password, user.PasswordHash))
         {
@@ -89,9 +90,12 @@ public class UserController : Controller
         // Falls back to legacy passwords only for existing accounts; new registrations use PBKDF2.
         if (user == null)
         {
-            var legacyUser = db.Users.FirstOrDefault(u => u.Email == email && u.PasswordHash == password);
+            var legacyUser = db.Users.FirstOrDefault(u =>
+                (u.Email == email || u.Username == email) && u.PasswordHash == password);
             if (legacyUser != null)
             {
+                legacyUser.PasswordHash = HashPassword(password);
+                db.SaveChanges();
                 user = legacyUser;
             }
         }
@@ -101,6 +105,13 @@ public class UserController : Controller
         {
             Session["UserId"] = user.UserId;
             Session["Username"] = user.Username;
+
+            var adminEmails = ConfigurationManager.AppSettings["AdminEmails"] ?? String.Empty;
+            var isAdmin = adminEmails.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Any(emailAddress => String.Equals(emailAddress.Trim(), user.Email, StringComparison.OrdinalIgnoreCase)
+                    || String.Equals(emailAddress.Trim(), user.Username, StringComparison.OrdinalIgnoreCase));
+            Session["IsAdmin"] = isAdmin;
+
             return RedirectToAction("Index", "Home");
         }
 
@@ -114,6 +125,7 @@ public class UserController : Controller
     {
         Session.Remove("UserId");
         Session.Remove("Username");
+        Session.Remove("IsAdmin");
         return RedirectToAction("Login");
     }
 

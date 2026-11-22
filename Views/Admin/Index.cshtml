@@ -1,0 +1,60 @@
+@{
+    ViewBag.Title = "Bảng điều khiển quản trị";
+}
+<section class="admin-page">
+    @Html.Partial("_AdminNav")
+    <div class="admin-header">
+        <div>
+            <p class="admin-eyebrow">Khu vực quản trị</p>
+            <h1>Bảng điều khiển</h1>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <p class="admin-alert success">@TempData["Success"]</p>
+    }
+
+    <div class="admin-stats">
+        <article><span>Truyện</span><strong>@ViewBag.StoryCount</strong></article>
+        <article><span>Chương</span><strong>@ViewBag.ChapterCount</strong></article>
+        <article><span>Bình luận</span><strong>@ViewBag.CommentCount</strong></article>
+        <article><span>Người dùng</span><strong>@ViewBag.UserCount</strong></article>
+    </div>
+
+    <div class="admin-panel">
+        <div class="admin-panel-heading">
+            <div>
+                <p class="admin-eyebrow">Nội dung</p>
+                <h2>Truyện gần đây</h2>
+            </div>
+            <div class="admin-panel-actions">
+                @Html.ActionLink("Quản lý truyện", "Stories", "Admin", null, new { @class = "admin-secondary-button" })
+                @Html.ActionLink("＋ Thêm truyện", "CreateStory", "Admin", null, new { @class = "admin-primary-button" })
+            </div>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead><tr><th>Tên truyện</th><th>Tác giả</th><th>Ngày tạo</th><th></th></tr></thead>
+                <tbody>
+                    @if (ViewBag.RecentStories != null && ((IEnumerable<comic_website.Models.Story>)ViewBag.RecentStories).Any())
+                    {
+                        foreach (var story in (IEnumerable<comic_website.Models.Story>)ViewBag.RecentStories)
+                        {
+                            <tr>
+                                <td><strong>@story.Title</strong></td>
+                                <td>@story.Author</td>
+                                <td>@(story.CreatedAt.HasValue ? story.CreatedAt.Value.ToString("dd/MM/yyyy") : "—")</td>
+                                <td>@Html.ActionLink("Chỉnh sửa", "EditStory", "Admin", new { id = story.StoryId }, new { @class = "admin-link" })</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="4"><div class="admin-empty">Chưa có truyện nào. Hãy thêm truyện đầu tiên để bắt đầu.</div></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>

@@ -6,8 +6,8 @@
     @using (Html.BeginForm("Login", "User", FormMethod.Post))
     {
         @Html.AntiForgeryToken()
-        <label>Email</label>
-        <input type="email" name="email" />
+        <label>Tài khoản</label>
+        <input type="text" name="email" autocomplete="username" />
         <label>Mật khẩu</label>
         <input type="password" name="password" />
         if (TempData["Success"] != null)

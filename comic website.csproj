@@ -143,6 +143,7 @@
     <Compile Include="Models\Comment.cs" />
     <Compile Include="Models\Story.cs" />
     <Compile Include="Models\User.cs" />
+    <Compile Include="Controllers\AdminController.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitattributes" />
@@ -556,10 +557,19 @@
     <Content Include="Views\User\Login.cshtml" />
     <Content Include="Views\User\Register.cshtml" />
     <Content Include="Views\Story\Index.cshtml" />
+    <Content Include="Views\Admin\Index.cshtml" />
+    <Content Include="Views\Admin\Stories.cshtml" />
+    <Content Include="Views\Admin\CreateStory.cshtml" />
+    <Content Include="Views\Admin\EditStory.cshtml" />
+    <Content Include="Views\Admin\Chapters.cshtml" />
+    <Content Include="Views\Admin\_AdminNav.cshtml" />
+    <Content Include="Views\Chapter\Read.cshtml" />
+    <Content Include="Views\Story\Details.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
     <Folder Include="obj\Debug\TempPE\" />
+    <Folder Include="Uploads\Covers\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />

@@ -1,0 +1,280 @@
+@model comic_website.Models.Story
+@{
+    var coverUrl = ViewBag.CoverUrl as string;
+    var chapters = Model.Chapters.OrderBy(chapter => chapter.ChapterNumber).ToList();
+    var comments = Model.Comments.OrderByDescending(comment => comment.CreatedAt).ToList();
+    ViewBag.Title = Model.Title;
+}
+@section head {
+    <style>
+        .story-details-page {
+            width: calc(100% - 32px);
+            max-width: 1100px;
+            margin: 30px auto 48px;
+            color: #111827;
+        }
+
+        .story-details-card,
+        .story-details-panel {
+            margin-bottom: 20px;
+            padding: 22px;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 3px 12px rgba(15, 23, 42, .05);
+        }
+
+        .story-details-hero {
+            display: grid;
+            grid-template-columns: minmax(180px, 250px) minmax(0, 1fr);
+            gap: 26px;
+            align-items: start;
+        }
+
+        .story-details-cover {
+            display: block;
+            width: 100%;
+            max-height: 360px;
+            border-radius: 9px;
+            object-fit: cover;
+            background: #f3f4f6;
+        }
+
+        .story-cover-placeholder {
+            display: grid;
+            min-height: 280px;
+            place-items: center;
+            border-radius: 9px;
+            background: linear-gradient(145deg, #fff7ed, #fed7aa);
+            color: #c86419;
+            font-size: 64px;
+            font-weight: 700;
+        }
+
+        .story-details-info h1 {
+            margin: 0 0 14px;
+            font-size: 30px;
+            line-height: 1.2;
+        }
+
+        .story-meta {
+            display: grid;
+            gap: 8px;
+            margin: 0 0 18px;
+            color: #4b5563;
+        }
+
+        .story-description {
+            margin: 0;
+            color: #374151;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+
+        .story-details-actions { margin-top: 20px; }
+
+        .story-details-button {
+            display: inline-flex;
+            min-height: 42px;
+            align-items: center;
+            justify-content: center;
+            padding: 9px 16px;
+            border: 1px solid #d97724;
+            border-radius: 8px;
+            background: #d97724;
+            color: #fff;
+            font-weight: 700;
+            text-decoration: none;
+            transition: background-color .15s ease, transform .15s ease;
+        }
+
+        .story-details-button:hover {
+            transform: translateY(-1px);
+            border-color: #b45309;
+            background: #b45309;
+            color: #fff;
+        }
+
+        .story-details-panel h2 {
+            margin: 0 0 16px;
+            font-size: 21px;
+        }
+
+        .story-chapter-list,
+        .story-comment-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .story-chapter-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 12px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #fff;
+            color: #374151;
+            text-decoration: none;
+            transition: border-color .15s ease, background-color .15s ease, color .15s ease;
+        }
+
+        .story-chapter-link:hover {
+            border-color: #fdba74;
+            background: #fffaf5;
+            color: #c86419;
+        }
+
+        .story-chapter-title { color: #6b7280; }
+
+        .story-comment-form {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+
+        .story-comment-form textarea {
+            width: 100%;
+            min-height: 110px;
+            padding: 11px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font: inherit;
+            resize: vertical;
+        }
+
+        .story-comment-form textarea:focus {
+            outline: none;
+            border-color: #d97724;
+            box-shadow: 0 0 0 3px rgba(217, 119, 36, .14);
+        }
+
+        .story-comment-form button {
+            justify-self: end;
+            padding: 10px 16px;
+            border: 0;
+            border-radius: 8px;
+            background: #d97724;
+            color: #fff;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .story-comment-form button:hover { background: #b45309; }
+
+        .story-comment {
+            padding: 12px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f9fafb;
+        }
+
+        .story-comment-header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .story-comment-date { color: #6b7280; font-size: 13px; }
+        .story-comment p { margin: 0; line-height: 1.6; white-space: pre-wrap; }
+        .story-empty { color: #6b7280; }
+
+        @@media (max-width: 640px) {
+            .story-details-page { width: calc(100% - 20px); margin-top: 18px; }
+            .story-details-card, .story-details-panel { padding: 16px; }
+            .story-details-hero { grid-template-columns: 1fr; gap: 18px; }
+            .story-details-cover, .story-cover-placeholder { width: min(100%, 220px); max-height: 300px; }
+            .story-details-info h1 { font-size: 24px; }
+        }
+    </style>
+}
+<section class="story-details-page">
+    <article class="story-details-card">
+        <div class="story-details-hero">
+            <div>
+                @if (!String.IsNullOrWhiteSpace(coverUrl))
+                {
+                    <img class="story-details-cover" src="@Url.Content(coverUrl)" alt="Ảnh bìa @Model.Title" />
+                }
+                else
+                {
+                    <div class="story-cover-placeholder" aria-label="Chưa có ảnh bìa">T</div>
+                }
+            </div>
+            <div class="story-details-info">
+                <h1>@Model.Title</h1>
+                <div class="story-meta">
+                    <div><strong>Tác giả:</strong> @(String.IsNullOrWhiteSpace(Model.Author) ? "Chưa cập nhật" : Model.Author)</div>
+                    <div><strong>Thể loại:</strong> @(Model.Category == null ? "Chưa phân loại" : Model.Category.CategoryName)</div>
+                    <div><strong>Số chương:</strong> @chapters.Count</div>
+                    @if (Model.CreatedAt.HasValue)
+                    {
+                        <div><strong>Ngày đăng:</strong> @Model.CreatedAt.Value.ToString("dd/MM/yyyy")</div>
+                    }
+                </div>
+                <p class="story-description">@(String.IsNullOrWhiteSpace(Model.Description) ? "Chưa có mô tả cho truyện này." : Model.Description)</p>
+                @if (chapters.Any())
+                {
+                    <div class="story-details-actions">
+                        <a class="story-details-button" href="@Url.Action("Read", "Chapter", new { id = chapters[0].ChapterId })">Đọc chương đầu</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </article>
+
+    <section class="story-details-panel" aria-labelledby="chapters-heading">
+        <h2 id="chapters-heading">Danh sách chương</h2>
+        @if (chapters.Any())
+        {
+            <div class="story-chapter-list">
+                @foreach (var chapter in chapters)
+                {
+                    <a class="story-chapter-link" href="@Url.Action("Read", "Chapter", new { id = chapter.ChapterId })">
+                        <strong>Chương @chapter.ChapterNumber</strong>
+                        <span class="story-chapter-title">@(String.IsNullOrWhiteSpace(chapter.Title) ? "Đọc chương" : chapter.Title)</span>
+                    </a>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="story-empty">Truyện chưa có chương.</p>
+        }
+    </section>
+
+    <section class="story-details-panel" aria-labelledby="comments-heading">
+        <h2 id="comments-heading">Bình luận (@comments.Count)</h2>
+        @using (Html.BeginForm("Add", "Comment", FormMethod.Post, new { @class = "story-comment-form" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.Hidden("StoryId", Model.StoryId)
+            <label for="commentContent">Viết bình luận</label>
+            <textarea id="commentContent" name="Content" maxlength="2000" required placeholder="Chia sẻ cảm nhận của bạn..."></textarea>
+            <button type="submit">Gửi bình luận</button>
+        }
+
+        @if (comments.Any())
+        {
+            <div class="story-comment-list">
+                @foreach (var comment in comments)
+                {
+                    <article class="story-comment">
+                        <div class="story-comment-header">
+                            <strong>@(comment.User == null || String.IsNullOrWhiteSpace(comment.User.Username) ? "Độc giả" : comment.User.Username)</strong>
+                            <span class="story-comment-date">@(comment.CreatedAt.HasValue ? comment.CreatedAt.Value.ToString("dd/MM/yyyy HH:mm") : "")</span>
+                        </div>
+                        <p>@comment.Content</p>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="story-empty">Chưa có bình luận nào.</p>
+        }
+    </section>
+</section>
