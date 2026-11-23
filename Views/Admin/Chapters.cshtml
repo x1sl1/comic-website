@@ -187,7 +187,7 @@
             <div class="chapter-form-grid">
                 <label>Số chương<input type="number" name="chapterNumber" min="1" required /></label>
                 <label>Tiêu đề chương<input type="text" name="title" /></label>
-                <label class="full">Ảnh chương<input type="file" name="chapterImage" accept="image/jpeg,image/png,image/webp" required /></label>
+                <label class="full">Các dải ảnh chương (chọn nhiều ảnh; tên file được dùng để sắp xếp)<input type="file" name="chapterImages" accept="image/jpeg,image/png,image/webp" multiple required /></label>
             </div>
             <div class="admin-form-actions"><button class="admin-primary-button" type="submit">Tải lên chương</button></div>
         }
@@ -207,14 +207,20 @@
                         <div class="chapter-form-grid">
                             <label>Số chương<input type="number" name="chapterNumber" value="@chapter.ChapterNumber" min="1" required /></label>
                             <label>Tiêu đề<input type="text" name="title" value="@chapter.Title" /></label>
-                            @if (!String.IsNullOrWhiteSpace(chapter.Content) && chapter.Content.StartsWith("/Uploads/Chapters/", StringComparison.OrdinalIgnoreCase))
+                            @{
+                                var chapterImageUrls = comic_website.Models.ChapterImageContent.GetImageUrls(chapter.Content);
+                            }
+                            @if (chapterImageUrls.Count > 0)
                             {
                                 <div class="full">
-                                    <span>Ảnh hiện tại</span>
-                                    <img class="chapter-image-preview" src="@Url.Content(chapter.Content)" alt="Ảnh chương @chapter.ChapterNumber" />
+                                    <span>Ảnh hiện tại (@chapterImageUrls.Count dải)</span>
+                                    @foreach (var imageUrl in chapterImageUrls)
+                                    {
+                                        <img class="chapter-image-preview" src="@Url.Content(imageUrl)" alt="Ảnh chương @chapter.ChapterNumber" />
+                                    }
                                 </div>
                             }
-                            <label class="full">@(String.IsNullOrWhiteSpace(chapter.Content) || !chapter.Content.StartsWith("/Uploads/Chapters/", StringComparison.OrdinalIgnoreCase) ? "Ảnh chương" : "Thay ảnh chương")<input type="file" name="chapterImage" accept="image/jpeg,image/png,image/webp" /></label>
+                            <label class="full">Chọn ảnh mới để thay toàn bộ dải hiện tại (để trống để giữ nguyên)<input type="file" name="chapterImages" accept="image/jpeg,image/png,image/webp" multiple /></label>
                         </div>
                         <div class="admin-form-actions">
                             <button class="admin-primary-button small" type="submit">Cập nhật</button>

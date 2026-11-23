@@ -1,17 +1,41 @@
 @model IEnumerable<comic_website.Models.Story>
 @{
-    ViewBag.Title = "Tất cả truyện";
+    var isFollowOnly = ViewBag.FollowOnly is bool && (bool)ViewBag.FollowOnly;
+    var updatedStoryIds = ViewBag.UpdatedStoryIds as int[] ?? new int[0];
+    var coverUrls = ViewBag.CoverUrls as System.Collections.Generic.IDictionary<int, string>
+        ?? new System.Collections.Generic.Dictionary<int, string>();
+    ViewBag.Title = isFollowOnly ? "Truyện đang theo dõi" : "Tất cả truyện";
+}
+@section head {
+    <style>
+        .story-list-section .story-card-cover-image {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .story-list-section .fresh-badge.follow-update {
+            right: 0;
+            left: auto;
+            border-radius: 3px 0 0 3px;
+        }
+    </style>
 }
 
 <section class="comic-section story-list-section">
     <div class="story-list-header">
         <div class="section-heading">
             <span class="heading-icon">★</span>
-            <h1>Tất cả truyện</h1>
+            <h1>@(isFollowOnly ? "Truyện đang theo dõi" : "Tất cả truyện")</h1>
         </div>
 
         @using (Html.BeginForm("Index", "Story", FormMethod.Get, new { @class = "story-filter", id = "storyFilter" }))
         {
+            if (isFollowOnly)
+            {
+                @Html.Hidden("follow", "true")
+            }
             <label for="categoryFilter">Thể loại</label>
             <select id="categoryFilter" name="category">
                 <option value="">Tất cả thể loại</option>
@@ -52,8 +76,18 @@
                 <article class="comic-card">
                     <a href="@Url.Action("Details", "Story", new { id = story.StoryId })">
                         <div class="comic-cover">
-                            <span class="cover-letter">@(!String.IsNullOrWhiteSpace(story.Title) ? story.Title.Substring(0, 1) : "T")</span>
-                            <span class="fresh-badge">Mới cập nhật</span>
+                            @if (coverUrls.ContainsKey(story.StoryId))
+                            {
+                                <img class="story-card-cover-image" src="@Url.Content(coverUrls[story.StoryId])" alt="Ảnh bìa @story.Title" />
+                            }
+                            else
+                            {
+                                <span class="cover-letter">@(!String.IsNullOrWhiteSpace(story.Title) ? story.Title.Substring(0, 1) : "T")</span>
+                            }
+                            @if (isFollowOnly && updatedStoryIds.Contains(story.StoryId))
+                            {
+                                <span class="fresh-badge follow-update">Mới cập nhật</span>
+                            }
                         </div>
                         <h2>@story.Title</h2>
                         <p>@(story.Chapters != null ? story.Chapters.Count : 0) chương</p>
@@ -63,7 +97,7 @@
         }
         else
         {
-            <p class="empty-story-list">Không tìm thấy truyện phù hợp.</p>
+            <p class="empty-story-list">@(isFollowOnly ? "Bạn chưa theo dõi truyện nào phù hợp." : "Không tìm thấy truyện phù hợp.")</p>
         }
     </div>
 </section>

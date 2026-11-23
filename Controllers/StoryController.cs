@@ -212,10 +212,10 @@ namespace comic_website.Controllers
         private string GetStoryCoverUrl(int storyId)
         {
             var mapPath = Server.MapPath("~/App_Data/story-covers.txt");
-            if (!File.Exists(mapPath)) return null;
+            if (!System.IO.File.Exists(mapPath)) return null;
 
             var prefix = storyId + "|";
-            var line = File.ReadLines(mapPath)
+            var line = System.IO.File.ReadLines(mapPath)
                 .FirstOrDefault(entry => entry.StartsWith(prefix, StringComparison.Ordinal));
             return line == null ? null : line.Substring(prefix.Length);
         }

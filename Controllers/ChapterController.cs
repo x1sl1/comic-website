@@ -18,6 +18,17 @@ namespace comic_website.Controllers
                 return HttpNotFound();
             }
 
+            ViewBag.PreviousChapterId = db.Chapters
+                .Where(item => item.StoryId == chapter.StoryId && item.ChapterNumber < chapter.ChapterNumber)
+                .OrderByDescending(item => item.ChapterNumber)
+                .Select(item => (int?)item.ChapterId)
+                .FirstOrDefault();
+            ViewBag.NextChapterId = db.Chapters
+                .Where(item => item.StoryId == chapter.StoryId && item.ChapterNumber > chapter.ChapterNumber)
+                .OrderBy(item => item.ChapterNumber)
+                .Select(item => (int?)item.ChapterId)
+                .FirstOrDefault();
+
             return View(chapter);
         }
 

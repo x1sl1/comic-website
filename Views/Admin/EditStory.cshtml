@@ -188,8 +188,8 @@
                     @Html.TextBoxFor(m => m.Author)
                 </div>
                 <div class="admin-field">
-                    <label for="CategoryId">Thể loại</label>
-                    @Html.DropDownList("CategoryId", (SelectList)ViewBag.CategoryId)
+                    <label for="categoryName">Thể loại</label>
+                    @Html.DropDownList("categoryName", (SelectList)ViewBag.Categories, "-- Chọn thể loại --", new { id = "categoryName" })
                 </div>
                 <div class="admin-field">
                     <label for="coverFile">Ảnh bìa mới</label>

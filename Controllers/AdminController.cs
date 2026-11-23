@@ -11,6 +11,11 @@ namespace comic_website.Controllers
     public class AdminController : Controller
     {
         private readonly WebDocTruyenEntities db = new WebDocTruyenEntities();
+        private static readonly string[] StoryCategoryNames =
+        {
+            "Hành động", "Phiêu lưu", "Romance", "Hài hước", "Fantasy",
+            "Manhwa", "Siêu nhiên", "Kinh dị", "Trinh thám", "Truyện chữ"
+        };
 
         public ActionResult Index()
         {
@@ -43,28 +48,31 @@ namespace comic_website.Controllers
         {
             if (!IsAdmin()) return RedirectToAction("Login", "User");
 
-            ViewBag.CategoryId = new SelectList(db.Categories.OrderBy(c => c.CategoryName), "CategoryId", "CategoryName");
+            ViewBag.Categories = BuildStoryCategoryOptions(null);
             return View(new Story());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult CreateStory(Story story, HttpPostedFileBase coverFile)
+        public ActionResult CreateStory(Story story, string categoryName, HttpPostedFileBase coverFile)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "User");
 
-            if (String.IsNullOrWhiteSpace(story.Title) || story.CategoryId <= 0)
+            if (String.IsNullOrWhiteSpace(story.Title))
             {
-                ModelState.AddModelError("", "Tên truyện và thể loại là bắt buộc.");
+                ModelState.AddModelError("Title", "Tên truyện là bắt buộc.");
             }
 
-            if (!db.Categories.Any(c => c.CategoryId == story.CategoryId))
+            categoryName = GetCanonicalStoryCategory(categoryName);
+            if (categoryName == null)
             {
-                ModelState.AddModelError("CategoryId", "Thể loại không hợp lệ.");
+                ModelState.AddModelError("categoryName", "Vui lòng chọn thể loại hợp lệ.");
             }
 
             if (ModelState.IsValid)
             {
+                var category = GetOrCreateStoryCategory(categoryName);
+                story.CategoryId = category.CategoryId;
                 story.CreatedAt = DateTime.Now;
                 db.Stories.Add(story);
                 db.SaveChanges();
@@ -74,7 +82,7 @@ namespace comic_website.Controllers
                 return RedirectToAction("Stories");
             }
 
-            ViewBag.CategoryId = new SelectList(db.Categories.OrderBy(c => c.CategoryName), "CategoryId", "CategoryName", story.CategoryId);
+            ViewBag.Categories = BuildStoryCategoryOptions(categoryName);
             return View(story);
         }
 
@@ -90,44 +98,47 @@ namespace comic_website.Controllers
             var story = db.Stories.Find(id.Value);
             if (story == null) return HttpNotFound();
 
-            ViewBag.CategoryId = new SelectList(db.Categories.OrderBy(c => c.CategoryName), "CategoryId", "CategoryName", story.CategoryId);
+            var currentCategory = db.Categories.Find(story.CategoryId);
+            ViewBag.Categories = BuildStoryCategoryOptions(currentCategory == null ? null : currentCategory.CategoryName);
             ViewBag.CoverUrl = GetCoverUrl(id.Value);
             return View(story);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult EditStory(Story story, HttpPostedFileBase coverFile)
+        public ActionResult EditStory(Story story, string categoryName, HttpPostedFileBase coverFile)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "User");
 
             var existing = db.Stories.Find(story.StoryId);
             if (existing == null) return HttpNotFound();
 
-            existing.CategoryId = story.CategoryId;
             existing.Title = story.Title;
             existing.Author = story.Author;
             existing.Description = story.Description;
 
-            if (String.IsNullOrWhiteSpace(existing.Title) || existing.CategoryId <= 0)
+            if (String.IsNullOrWhiteSpace(existing.Title))
             {
-                ModelState.AddModelError("", "Tên truyện và thể loại là bắt buộc.");
+                ModelState.AddModelError("Title", "Tên truyện là bắt buộc.");
             }
 
-            if (!db.Categories.Any(c => c.CategoryId == existing.CategoryId))
+            categoryName = GetCanonicalStoryCategory(categoryName);
+            if (categoryName == null)
             {
-                ModelState.AddModelError("CategoryId", "Thể loại không hợp lệ.");
+                ModelState.AddModelError("categoryName", "Vui lòng chọn thể loại hợp lệ.");
             }
 
             if (ModelState.IsValid)
             {
+                var category = GetOrCreateStoryCategory(categoryName);
+                existing.CategoryId = category.CategoryId;
                 db.SaveChanges();
                 SaveCover(existing.StoryId, coverFile);
                 TempData["Success"] = "Đã cập nhật thông tin truyện.";
                 return RedirectToAction("Stories");
             }
 
-            ViewBag.CategoryId = new SelectList(db.Categories.OrderBy(c => c.CategoryName), "CategoryId", "CategoryName", existing.CategoryId);
+            ViewBag.Categories = BuildStoryCategoryOptions(categoryName);
             ViewBag.CoverUrl = GetCoverUrl(existing.StoryId);
             return View(existing);
         }
@@ -163,7 +174,7 @@ namespace comic_website.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult CreateChapter(int storyId, int chapterNumber, string title, HttpPostedFileBase chapterImage)
+        public ActionResult CreateChapter(int storyId, int chapterNumber, string title, HttpPostedFileBase[] chapterImages)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "User");
 
@@ -180,9 +191,9 @@ namespace comic_website.Controllers
                 return RedirectToAction("Chapters", new { storyId = storyId });
             }
 
-            string imageUrl;
+            List<string> imageUrls;
             string uploadError;
-            if (!TrySaveChapterImage(storyId, chapterImage, out imageUrl, out uploadError))
+            if (!TrySaveChapterImages(storyId, chapterNumber, chapterImages, out imageUrls, out uploadError))
             {
                 TempData["Error"] = uploadError;
                 return RedirectToAction("Chapters", new { storyId = storyId });
@@ -193,7 +204,7 @@ namespace comic_website.Controllers
                 StoryId = storyId,
                 ChapterNumber = chapterNumber,
                 Title = title,
-                Content = imageUrl
+                Content = ChapterImageContent.Serialize(imageUrls)
             });
             db.SaveChanges();
 
@@ -203,7 +214,7 @@ namespace comic_website.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult EditChapter(int chapterId, int chapterNumber, string title, HttpPostedFileBase chapterImage)
+        public ActionResult EditChapter(int chapterId, int chapterNumber, string title, HttpPostedFileBase[] chapterImages)
         {
             if (!IsAdmin()) return RedirectToAction("Login", "User");
 
@@ -223,31 +234,34 @@ namespace comic_website.Controllers
                 return RedirectToAction("Chapters", new { storyId = chapter.StoryId });
             }
 
-            var oldImageUrl = chapter.Content;
-            var imageUrl = oldImageUrl;
-            if (chapterImage != null && chapterImage.ContentLength > 0)
+            var oldContent = chapter.Content;
+            var newContent = oldContent;
+            var hasNewImages = chapterImages != null
+                && chapterImages.Any(image => image != null && image.ContentLength > 0);
+            if (hasNewImages)
             {
+                List<string> imageUrls;
                 string uploadError;
-                if (!TrySaveChapterImage(chapter.StoryId, chapterImage, out imageUrl, out uploadError))
+                if (!TrySaveChapterImages(chapter.StoryId, chapterNumber, chapterImages, out imageUrls, out uploadError))
                 {
                     TempData["Error"] = uploadError;
                     return RedirectToAction("Chapters", new { storyId = chapter.StoryId });
                 }
-            }
-            else if (!IsChapterImageUrl(oldImageUrl))
-            {
-                TempData["Error"] = "Vui lòng chọn ảnh chương.";
-                return RedirectToAction("Chapters", new { storyId = chapter.StoryId });
+
+                newContent = ChapterImageContent.Serialize(imageUrls);
             }
 
             chapter.ChapterNumber = chapterNumber;
             chapter.Title = title;
-            chapter.Content = imageUrl;
+            chapter.Content = newContent;
             db.SaveChanges();
+            db.Database.ExecuteSqlCommand(
+                "UPDATE dbo.Chapters SET UpdatedAt = SYSUTCDATETIME() WHERE ChapterId = @p0",
+                chapterId);
 
-            if (!String.Equals(oldImageUrl, imageUrl, StringComparison.OrdinalIgnoreCase))
+            if (!String.Equals(oldContent, newContent, StringComparison.Ordinal))
             {
-                DeleteChapterImage(oldImageUrl);
+                DeleteChapterImages(oldContent);
             }
 
             TempData["Success"] = "Đã cập nhật chương.";
@@ -264,10 +278,10 @@ namespace comic_website.Controllers
             if (chapter == null) return HttpNotFound();
 
             var storyId = chapter.StoryId;
-            var imageUrl = chapter.Content;
+            var imageContent = chapter.Content;
             db.Chapters.Remove(chapter);
             db.SaveChanges();
-            DeleteChapterImage(imageUrl);
+            DeleteChapterImages(imageContent);
 
             TempData["Success"] = "Đã xóa chương.";
             return RedirectToAction("Chapters", new { storyId = storyId });
@@ -276,6 +290,37 @@ namespace comic_website.Controllers
         private bool IsAdmin()
         {
             return Session["IsAdmin"] is bool && (bool)Session["IsAdmin"];
+        }
+
+        private static SelectList BuildStoryCategoryOptions(string selectedCategoryName)
+        {
+            var categories = StoryCategoryNames.ToList();
+            if (!String.IsNullOrWhiteSpace(selectedCategoryName)
+                && !categories.Any(name => String.Equals(name, selectedCategoryName, StringComparison.OrdinalIgnoreCase)))
+            {
+                categories.Insert(0, selectedCategoryName);
+            }
+
+            return new SelectList(categories, selectedCategoryName);
+        }
+
+        private static string GetCanonicalStoryCategory(string categoryName)
+        {
+            if (String.IsNullOrWhiteSpace(categoryName)) return null;
+
+            return StoryCategoryNames.FirstOrDefault(name =>
+                String.Equals(name, categoryName.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
+
+        private Category GetOrCreateStoryCategory(string categoryName)
+        {
+            var category = db.Categories.FirstOrDefault(item => item.CategoryName == categoryName);
+            if (category != null) return category;
+
+            category = new Category { CategoryName = categoryName };
+            db.Categories.Add(category);
+            db.SaveChanges();
+            return category;
         }
 
         private void SaveCover(int storyId, HttpPostedFileBase coverFile)
@@ -307,61 +352,82 @@ namespace comic_website.Controllers
             System.IO.File.WriteAllLines(mapPath, lines);
         }
 
-        private bool TrySaveChapterImage(int storyId, HttpPostedFileBase image, out string imageUrl, out string error)
+        private bool TrySaveChapterImages(int storyId, int chapterNumber, HttpPostedFileBase[] files, out List<string> imageUrls, out string error)
         {
-            imageUrl = null;
+            imageUrls = new List<string>();
             error = null;
 
-            if (image == null || image.ContentLength <= 0)
+            var images = (files ?? new HttpPostedFileBase[0])
+                .Where(image => image != null && image.ContentLength > 0)
+                .OrderBy(image => Path.GetFileName(image.FileName), StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (images.Count == 0)
             {
-                error = "Vui lòng chọn ảnh chương.";
+                error = "Vui lòng chọn ít nhất một ảnh dải tranh.";
                 return false;
             }
 
             const int maxImageSize = 8 * 1024 * 1024;
-            if (image.ContentLength > maxImageSize)
+            const long maxTotalSize = 95L * 1024 * 1024;
+            if (images.Count > 60)
             {
-                error = "Ảnh chương không được vượt quá 8 MB.";
+                error = "Mỗi chương được tải lên tối đa 60 ảnh.";
                 return false;
             }
 
-            var extension = Path.GetExtension(image.FileName);
             var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-            if (!allowed.Contains(extension == null ? "" : extension.ToLowerInvariant()))
+            long totalSize = 0;
+            foreach (var image in images)
             {
-                error = "Chỉ hỗ trợ ảnh JPG, PNG hoặc WEBP.";
+                if (image.ContentLength > maxImageSize)
+                {
+                    error = "Mỗi ảnh dải tranh không được vượt quá 8 MB.";
+                    return false;
+                }
+
+                totalSize += image.ContentLength;
+                var extension = Path.GetExtension(image.FileName);
+                if (!allowed.Contains(extension == null ? "" : extension.ToLowerInvariant()))
+                {
+                    error = "Chỉ hỗ trợ ảnh JPG, PNG hoặc WEBP.";
+                    return false;
+                }
+            }
+
+            if (totalSize > maxTotalSize)
+            {
+                error = "Tổng dung lượng ảnh của một lần tải không được vượt quá 95 MB.";
                 return false;
             }
 
             var uploads = Server.MapPath("~/Uploads/Chapters");
             if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
-            var fileName = "story-" + storyId + "-chapter-" + Guid.NewGuid().ToString("N") + extension.ToLowerInvariant();
-            image.SaveAs(Path.Combine(uploads, fileName));
-            imageUrl = "/Uploads/Chapters/" + fileName;
+            for (var index = 0; index < images.Count; index++)
+            {
+                var image = images[index];
+                var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
+                var fileName = "story-" + storyId
+                    + "-chapter-" + chapterNumber
+                    + "-page-" + (index + 1).ToString("D3")
+                    + "-" + Guid.NewGuid().ToString("N") + extension;
+                image.SaveAs(Path.Combine(uploads, fileName));
+                imageUrls.Add("/Uploads/Chapters/" + fileName);
+            }
+
             return true;
         }
 
-        private bool IsChapterImageUrl(string imageUrl)
+        private void DeleteChapterImages(string content)
         {
-            return !String.IsNullOrWhiteSpace(imageUrl)
-                && imageUrl.StartsWith("/Uploads/Chapters/", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private void DeleteChapterImage(string imageUrl)
-        {
-            const string uploadPrefix = "/Uploads/Chapters/";
-            if (!IsChapterImageUrl(imageUrl)) return;
-
-            var fileName = Path.GetFileName(imageUrl);
-            if (String.IsNullOrWhiteSpace(fileName)
-                || !String.Equals(imageUrl, uploadPrefix + fileName, StringComparison.OrdinalIgnoreCase))
+            foreach (var imageUrl in ChapterImageContent.GetImageUrls(content))
             {
-                return;
-            }
+                var fileName = Path.GetFileName(imageUrl);
+                var filePath = Path.Combine(Server.MapPath("~/Uploads/Chapters"), fileName);
 
-            var filePath = Path.Combine(Server.MapPath("~/Uploads/Chapters"), fileName);
-            if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
+                if (System.IO.File.Exists(filePath)) System.IO.File.Delete(filePath);
+            }
         }
 
         private string GetCoverUrl(int storyId)

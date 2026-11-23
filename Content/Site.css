@@ -55,7 +55,8 @@ a { color: inherit; text-decoration: none; }
 .comic-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 16px 18px; }
 .comic-card { min-width: 0; }
 .comic-card a { display: block; }
-.comic-cover { position: relative; height: 220px; overflow: hidden; border-radius: 3px; background: linear-gradient(145deg, #dcebf4, #8db7d2 55%, #f2c8a7); box-shadow: inset 0 -65px 70px rgba(0,0,0,.12); }
+.comic-cover { position: relative; width: 100%; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 3px; background: linear-gradient(145deg, #dcebf4, #8db7d2 55%, #f2c8a7); box-shadow: inset 0 -65px 70px rgba(0,0,0,.12); }
+.comic-cover-image { display: block; width: 100%; height: 100%; object-fit: contain !important; object-position: center center !important; }
 .cover-letter { position: absolute; inset: 0; display: grid; place-items: center; color: rgba(255,255,255,.88); font-family: Georgia, serif; font-size: 72px; font-weight: 800; text-shadow: 0 4px 15px rgba(0,0,0,.18); }
 .fresh-badge { position: absolute; top: 8px; left: 0; padding: 5px 8px; border-radius: 0 3px 3px 0; background: #e34f67; color: #fff; font-size: 11px; }
 .comic-card h2 { height: 38px; margin: 8px 0 2px; overflow: hidden; text-align: center; color: #1f1f1f; font-size: 14px; font-weight: 700; line-height: 19px; }
@@ -295,6 +296,6 @@ a { color: inherit; text-decoration: none; }
     .category-inner { overflow-x: auto; }
     .nav-dropdown-menu { position: fixed; top: 118px; left: 16px; right: 16px; width: auto; transform: none; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .comic-grid { grid-template-columns: repeat(3, 1fr); }
-    .comic-cover { height: 190px; }
+    .comic-cover { height: auto; }
     .back-to-top { right: 16px; bottom: 16px; width: 44px; height: 44px; }
 }

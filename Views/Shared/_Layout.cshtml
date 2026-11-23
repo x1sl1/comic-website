@@ -73,8 +73,11 @@
                     </div>
                 </div>
 
-                <a href="@Url.Action("Index", "Story", new { follow = true })">Theo dõi</a>
-                <a href="@Url.Action("History", "Story")">Lịch sử</a>
+                @if (Session["UserId"] != null)
+                {
+                    <a href="@Url.Action("Index", "Story", new { follow = true })">Theo dõi</a>
+                    <a href="@Url.Action("History", "Story")">Lịch sử</a>
+                }
             </div>
         </nav>
     </header>

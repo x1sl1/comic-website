@@ -3,6 +3,7 @@
     var coverUrl = ViewBag.CoverUrl as string;
     var chapters = Model.Chapters.OrderBy(chapter => chapter.ChapterNumber).ToList();
     var comments = Model.Comments.OrderByDescending(comment => comment.CreatedAt).ToList();
+    var isFollowing = ViewBag.IsFollowing is bool && (bool)ViewBag.IsFollowing;
     ViewBag.Title = Model.Title;
 }
 @section head {
@@ -71,7 +72,24 @@
             white-space: pre-wrap;
         }
 
-        .story-details-actions { margin-top: 20px; }
+        .story-details-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .story-details-actions form { margin: 0; }
+
+        .story-follow-notice {
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            border: 1px solid #a7f3d0;
+            border-radius: 8px;
+            background: #ecfdf5;
+            color: #065f46;
+            font-weight: 600;
+        }
 
         .story-details-button {
             display: inline-flex;
@@ -93,6 +111,18 @@
             border-color: #b45309;
             background: #b45309;
             color: #fff;
+        }
+
+        button.story-details-button { font: inherit; cursor: pointer; }
+
+        .story-details-button.is-following {
+            border-color: #15803d;
+            background: #15803d;
+        }
+
+        .story-details-button.is-following:hover {
+            border-color: #166534;
+            background: #166534;
         }
 
         .story-details-panel h2 {
@@ -192,6 +222,10 @@
     </style>
 }
 <section class="story-details-page">
+    @if (TempData["FollowMessage"] != null)
+    {
+        <div class="story-follow-notice" role="status">@TempData["FollowMessage"]</div>
+    }
     <article class="story-details-card">
         <div class="story-details-hero">
             <div>
@@ -216,12 +250,28 @@
                     }
                 </div>
                 <p class="story-description">@(String.IsNullOrWhiteSpace(Model.Description) ? "Chưa có mô tả cho truyện này." : Model.Description)</p>
-                @if (chapters.Any())
-                {
-                    <div class="story-details-actions">
+                <div class="story-details-actions">
+                    @if (Session["UserId"] is int)
+                    {
+                        using (Html.BeginForm("ToggleFollow", "Story", FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            @Html.Hidden("storyId", Model.StoryId)
+                            <button class="story-details-button @(isFollowing ? "is-following" : "")" type="submit">
+                                <strong>@(isFollowing ? "Hủy theo dõi" : "Theo dõi truyện")</strong>
+                            </button>
+                        }
+                    }
+                    else
+                    {
+                        <a class="story-details-button" href="@Url.Action("Login", "User")">Đăng nhập để theo dõi</a>
+                    }
+
+                    @if (chapters.Any())
+                    {
                         <a class="story-details-button" href="@Url.Action("Read", "Chapter", new { id = chapters[0].ChapterId })">Đọc chương đầu</a>
-                    </div>
-                }
+                    }
+                </div>
             </div>
         </div>
     </article>
